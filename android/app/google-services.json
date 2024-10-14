@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "938315548562",
+    "project_id": "mining-2d954",
+    "storage_bucket": "mining-2d954.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:938315548562:android:0633a554a3dc08b599634b",
+        "android_client_info": {
+          "package_name": "com.example.mining"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASzOf06rNyC1kDLnlizBUQ58DbAPoN7tQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
