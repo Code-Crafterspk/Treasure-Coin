@@ -1,13 +1,11 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
-import 'package:mining/authentication/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../boardingScreen/lastboardingScreen.dart';
-import '../miningApp/mainScreen.dart';
+import '../miningApp/utils/bottomNavigationBar.dart';
 import 'googleButton.dart';
 import 'login.dart'; // Assuming you have a login screen implemented
 
@@ -23,6 +21,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  final nameController = TextEditingController();
+
   bool loading = false;
   FirebaseAuth _auth = FirebaseAuth.instance;
   Future<void> _clearStoredToken() async {
@@ -65,24 +65,38 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       // Use Firebase Auth to create a new user
-      UserCredential userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.toString(),
       );
 
       // Check if the user was created successfully
       if (userCredential != null && userCredential.user != null) {
-        // Success: User is created
+        // Save the user's name to Firebase Auth profile
+        await userCredential.user!.updateProfile(displayName: nameController.text.trim());
+        await userCredential.user!.reload();
+
+        // Save user data to SharedPreferences
+        if (_formKey.currentState!.validate()) {
+          _formKey.currentState!.save(); // This triggers the onSaved method for each form field
+
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('name', nameController.text.trim());
+          await prefs.setString('email', emailController.text.trim());
+          await prefs.setString('password', passwordController.text.trim());
+
+        }
+
         setState(() {
-          loading = false; // Stop loading after success
+          loading = false;
         });
 
         // Navigate to login screen or next screen
         Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (context) => LoginScreen()));
+            context,
+            MaterialPageRoute(builder: (context) => LoginScreen())
+        );
       } else {
-        // If userCredential or user is null, something went wrong
         setState(() {
           loading = false;
         });
@@ -98,7 +112,7 @@ class _SignupScreenState extends State<SignupScreen> {
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
-        loading = false; // Stop loading on error
+        loading = false;
       });
 
       String message;
@@ -126,7 +140,7 @@ class _SignupScreenState extends State<SignupScreen> {
       );
     } catch (e) {
       setState(() {
-        loading = false; // Ensure loading stops if any other error occurs
+        loading = false;
       });
 
       Fluttertoast.showToast(
@@ -139,7 +153,6 @@ class _SignupScreenState extends State<SignupScreen> {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -229,6 +242,48 @@ class _SignupScreenState extends State<SignupScreen> {
                                   return null;
                                 },
                               ),
+                              TextFormField(
+                                keyboardType: TextInputType.name,
+                                controller: nameController,
+                                decoration: InputDecoration(
+                                  hintText: 'Enter Name',
+                                  hintStyle: const TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    color: Color(0xFF9d8236),
+                                  ),
+                                  prefixIcon: const Icon(Icons.person, color: Color(0xFFfbd034)),
+                                  filled: true,
+                                  fillColor: Colors.transparent,
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.zero,
+                                    borderSide: const BorderSide(color: Color(0xFF9d8236), width: 2.0),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.zero,
+                                    borderSide: const BorderSide(color: Color(0xFF9d8236), width: 2.0),
+                                  ),
+                                ),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontFamily: 'Montserrat',
+                                ),
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return 'Enter username';
+                                  }
+                                  if (!RegExp(r'^[a-zA-Z0-9_]{3,16}$').hasMatch(value)) {
+                                    return 'Username must be 3-16 characters and can only contain letters, numbers, and underscores';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) async {
+                                  // Save the username in SharedPreferences
+                                  SharedPreferences prefs = await SharedPreferences.getInstance();
+                                  await prefs.setString('name', value ?? 'Unknown');
+                                  print('Username saved: $value');
+                                },
+                              ),
+
                               const SizedBox(height: 10),
                               TextFormField(
                                 keyboardType: TextInputType.text,
@@ -390,30 +445,51 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: GoogleLoginButton(
                             onPressed: () async {
                               try {
-                                UserCredential userCredential = await signInWithGoogle();
-                                print('Signed in as: ${userCredential.user?.displayName}');
+                                UserCredential userCredential =
+                                await signInWithGoogle();
+                                print(
+                                    'Signed in as: ${userCredential.user?.displayName}');
 
                                 // Fetch the Firebase ID token (JWT)
-                                String? jwtToken = await userCredential.user?.getIdToken(true); // Force refresh of token
+                                String? jwtToken = await userCredential.user
+                                    ?.getIdToken(true); // Force refresh of token
 
-                                // Check if token was generated and store it
                                 if (jwtToken != null) {
-                                  // Store the token in SharedPreferences
+                                  // Store the JWT token in SharedPreferences
                                   await _storeJwtToken(jwtToken);
 
-                                  // Navigate to the next screen after successful sign-in
+                                  // Store user profile data in SharedPreferences
                                   if (userCredential.user != null) {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => mainScreen()), // Replace with your target screen
-                                    );
+                                    SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
+                                    await prefs.setString(
+                                        'name',
+                                        userCredential.user!.displayName ??
+                                            "Unknown");
+                                    await prefs.setString('email',
+                                        userCredential.user!.email ?? "No Email");
+                                    await prefs.setString(
+                                        'profileImageUrl',
+                                        userCredential.user!.photoURL ??
+                                            "No Image URL");
+
+                                    print('Saved user profile data');
                                   }
+
+                                  // Navigate to the next screen
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            BottomNav()), // Replace with your target screen
+                                  );
                                 }
                               } catch (e) {
                                 print(e);
                               }
                             },
-                          ),                        ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

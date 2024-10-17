@@ -5,8 +5,7 @@ import 'package:mining/authentication/forgotPassword.dart';
 import 'package:mining/authentication/signup.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../boardingScreen/lastboardingScreen.dart'; // Replace with your desired screen
-import '../miningApp/bottomNavigationBar.dart';
-import '../miningApp/mainScreen.dart';
+import '../miningApp/utils/bottomNavigationBar.dart';
 import 'googleButton.dart';
 import 'utils.dart'; // Assuming this is a utility class for displaying toast messages
 import 'package:google_sign_in/google_sign_in.dart';
@@ -26,18 +25,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Firebase Authentication instance
   FirebaseAuth _auth = FirebaseAuth.instance;
-  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref(); // Realtime Database reference
+  final DatabaseReference _dbRef =
+      FirebaseDatabase.instance.ref(); // Realtime Database reference
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
   }
+
   Future<UserCredential> signInWithGoogle() async {
     // Trigger the authentication flow
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
     // Obtain the auth details from the request
-    final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser!.authentication;
 
     // Create a new credential
     final OAuthCredential credential = GoogleAuthProvider.credential(
@@ -58,9 +60,10 @@ class _LoginScreenState extends State<LoginScreen> {
 // Function to store email and password
   Future<void> saveCredentials(String email, String password) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('email', email);        // Save email
-    await prefs.setString('password', password);  // Save password
+    await prefs.setString('email', email); // Save email
+    await prefs.setString('password', password); // Save password
   }
+
   Future<void> _clearStoredToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token'); // Remove any stored token
@@ -92,7 +95,8 @@ class _LoginScreenState extends State<LoginScreen> {
       await saveCredentials(email, password);
 
       // Fetch a fresh Firebase ID token (JWT)
-      String? jwtToken = await userCredential.user?.getIdToken(true); // Force refresh
+      String? jwtToken =
+          await userCredential.user?.getIdToken(true); // Force refresh
 
       if (jwtToken != null) {
         // Store the token in SharedPreferences
@@ -101,7 +105,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // Navigate to the next screen
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => bottomNav()), // Your desired screen
+          MaterialPageRoute(
+              builder: (context) => BottomNav()), // Your desired screen
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -139,9 +144,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> fetchData() async {
     String? token = await getStoredJwtToken();
 
-      // Handle the response...
-    }
-
+    // Handle the response...
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +164,8 @@ class _LoginScreenState extends State<LoginScreen> {
             Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/background.png'), // Ensure this image is added to your assets
+                  image: AssetImage('assets/background.png'),
+                  // Ensure this image is added to your assets
                   fit: BoxFit.cover,
                 ),
               ),
@@ -197,7 +202,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   fontFamily: 'Montserrat',
                                   color: Color(0xFF9d8236),
                                 ),
-                                prefixIcon: const Icon(Icons.email, color: Color(0xFFfbd034)),
+                                prefixIcon: const Icon(Icons.email,
+                                    color: Color(0xFFfbd034)),
                                 filled: true,
                                 fillColor: Colors.transparent,
                                 enabledBorder: OutlineInputBorder(
@@ -223,7 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 if (value!.isEmpty) {
                                   return 'Enter email';
                                 }
-                                if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value)) {
+                                if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                                    .hasMatch(value)) {
                                   return 'Enter a valid email';
                                 }
                                 return null;
@@ -240,7 +247,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   fontFamily: 'Montserrat',
                                   color: Color(0xFF9d8236),
                                 ),
-                                prefixIcon: const Icon(Icons.lock, color: Color(0xFFfbd034)),
+                                prefixIcon: const Icon(Icons.lock,
+                                    color: Color(0xFFfbd034)),
                                 filled: true,
                                 fillColor: Colors.transparent,
                                 enabledBorder: OutlineInputBorder(
@@ -278,9 +286,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 10),
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context)=>Forgotpassword()));
-                          
-                          },
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => Forgotpassword()));
+                        },
                         child: const Text(
                           'Forgot Password?',
                           style: TextStyle(
@@ -293,34 +303,37 @@ class _LoginScreenState extends State<LoginScreen> {
                       ElevatedButton(
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            login(emailController.text.trim(), passwordController.text.trim());
+                            login(emailController.text.trim(),
+                                passwordController.text.trim());
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 150, vertical: 15),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 150, vertical: 15),
                           backgroundColor: const Color(0xFFFFD700),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
                         ),
                         child: loading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
                             : const Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Color(0xFF010670),
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Montserrat',
-                          ),
-                        ),
+                                'Login',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Color(0xFF010670),
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Montserrat',
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
-                            "don't have an account?",
+                            "Don't have an account?",
                             style: TextStyle(
                               fontFamily: 'Montserrat',
                               color: Colors.white,
@@ -330,11 +343,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => SignupScreen()),
+                                MaterialPageRoute(
+                                    builder: (context) => SignupScreen()),
                               );
                             },
                             child: const Text(
-                              'Sign Up',
+                              'Sign up',
                               style: TextStyle(
                                 fontFamily: 'Montserrat',
                                 color: Color(0xFFFFD700),
@@ -345,34 +359,57 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 25),
                       // Add your Google login button if needed
+
                       GestureDetector(
                         child: GoogleLoginButton(
                           onPressed: () async {
                             try {
-                              UserCredential userCredential = await signInWithGoogle();
-                              print('Signed in as: ${userCredential.user?.displayName}');
+                              UserCredential userCredential =
+                                  await signInWithGoogle();
+                              print(
+                                  'Signed in as: ${userCredential.user?.displayName}');
 
                               // Fetch the Firebase ID token (JWT)
-                              String? jwtToken = await userCredential.user?.getIdToken(true); // Force refresh of token
+                              String? jwtToken = await userCredential.user
+                                  ?.getIdToken(true); // Force refresh of token
 
-                              // Check if token was generated and store it
                               if (jwtToken != null) {
-                                // Store the token in SharedPreferences
+                                // Store the JWT token in SharedPreferences
                                 await _storeJwtToken(jwtToken);
 
-                                // Navigate to the next screen after successful sign-in
+                                // Store user profile data in SharedPreferences
                                 if (userCredential.user != null) {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => mainScreen()), // Replace with your target screen
-                                  );
+                                  SharedPreferences prefs =
+                                      await SharedPreferences.getInstance();
+                                  await prefs.setString(
+                                      'name',
+                                      userCredential.user!.displayName ??
+                                          "Unknown");
+                                  await prefs.setString('email',
+                                      userCredential.user!.email ?? "No Email");
+                                  await prefs.setString(
+                                      'profileImageUrl',
+                                      userCredential.user!.photoURL ??
+                                          "No Image URL");
+
+                                  print('Saved user profile data');
                                 }
+
+                                // Navigate to the next screen
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          BottomNav()), // Replace with your target screen
+                                );
                               }
                             } catch (e) {
                               print(e);
                             }
                           },
-                        ),                      ),                    ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
