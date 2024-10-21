@@ -65,7 +65,7 @@ class LastboardingScreen extends StatelessWidget {
             ),
             // Buttons at the bottom
             Positioned(
-              bottom: 40,
+              bottom: 60,
               left: 0,
               right: 0,
               child: Row(

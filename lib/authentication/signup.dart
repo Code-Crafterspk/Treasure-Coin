@@ -40,23 +40,6 @@ class _SignupScreenState extends State<SignupScreen> {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('jwt_token');
   }
-  Future<UserCredential> signInWithGoogle() async {
-    // Trigger the authentication flow
-    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-
-    // Obtain the auth details from the request
-    final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
-
-    // Create a new credential
-    final OAuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    // Once signed in, return the UserCredential
-    return await FirebaseAuth.instance.signInWithCredential(credential);
-  }
-
 
   Future<void> signup(String email, String password) async {
     setState(() {
@@ -443,51 +426,65 @@ class _SignupScreenState extends State<SignupScreen> {
                         const SizedBox(height: 25),
                         GestureDetector(
                           child: GoogleLoginButton(
-                            onPressed: () async {
-                              try {
-                                UserCredential userCredential =
-                                await signInWithGoogle();
-                                print(
-                                    'Signed in as: ${userCredential.user?.displayName}');
+                              onPressed: () async {
+                                try {
+                                  // Initialize GoogleSignIn
+                                  final GoogleSignIn googleSignIn = GoogleSignIn();
 
-                                // Fetch the Firebase ID token (JWT)
-                                String? jwtToken = await userCredential.user
-                                    ?.getIdToken(true); // Force refresh of token
+                                  // Sign out from the current Google session to ensure a fresh login
+                                  await googleSignIn.signOut();
 
-                                if (jwtToken != null) {
-                                  // Store the JWT token in SharedPreferences
-                                  await _storeJwtToken(jwtToken);
+                                  // Now attempt to sign in
+                                  final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-                                  // Store user profile data in SharedPreferences
-                                  if (userCredential.user != null) {
-                                    SharedPreferences prefs =
-                                    await SharedPreferences.getInstance();
-                                    await prefs.setString(
-                                        'name',
-                                        userCredential.user!.displayName ??
-                                            "Unknown");
-                                    await prefs.setString('email',
-                                        userCredential.user!.email ?? "No Email");
-                                    await prefs.setString(
-                                        'profileImageUrl',
-                                        userCredential.user!.photoURL ??
-                                            "No Image URL");
-
-                                    print('Saved user profile data');
+                                  if (googleUser == null) {
+                                    // User canceled the sign-in process
+                                    return;
                                   }
 
-                                  // Navigate to the next screen
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            BottomNav()), // Replace with your target screen
+                                  // Obtain auth details from request
+                                  final GoogleSignInAuthentication googleAuth =
+                                  await googleUser.authentication;
+
+                                  // Create a new credential for Firebase
+                                  final credential = GoogleAuthProvider.credential(
+                                    accessToken: googleAuth.accessToken,
+                                    idToken: googleAuth.idToken,
                                   );
+
+                                  // Sign in to Firebase with the Google credential
+                                  UserCredential userCredential = await FirebaseAuth.instance
+                                      .signInWithCredential(credential);
+                                  print('Signed in as: ${userCredential.user?.displayName}');
+
+                                  // Fetch the Firebase ID token (JWT)
+                                  String? jwtToken = await userCredential.user?.getIdToken(true);
+
+                                  if (jwtToken != null) {
+                                    // Store the JWT token in SharedPreferences
+                                    await _storeJwtToken(jwtToken);
+
+                                    // Store user profile data in SharedPreferences
+                                    if (userCredential.user != null) {
+                                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                                      await prefs.setString('name', userCredential.user!.displayName ?? "Unknown");
+                                      await prefs.setString('email', userCredential.user!.email ?? "No Email");
+                                      await prefs.setString('profileImageUrl', userCredential.user!.photoURL ?? "No Image URL");
+
+                                      print('Saved user profile data');
+                                    }
+
+                                    // Navigate to the next screen
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => BottomNav()),
+                                    );
+                                  }
+                                } catch (e) {
+                                  print('Error during Google sign-in: $e');
+                                  // Handle sign-in errors (e.g., show an error message to the user)
                                 }
-                              } catch (e) {
-                                print(e);
                               }
-                            },
                           ),
                         ),
                       ],

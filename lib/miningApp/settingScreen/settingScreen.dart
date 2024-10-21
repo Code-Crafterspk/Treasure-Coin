@@ -140,7 +140,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
             SizedBox(height: 20),
-            _buildMenuItem(Icons.notifications, '     Notification', () {
+            _buildMenuItem(
+
+                Icons.notifications, '     Notification', () {
               print('Notification tapped');
             }),
             _buildMenuItem(Icons.help, '     Support', () {

@@ -39,7 +39,7 @@ class GoogleLoginButton extends StatelessWidget {
                 ),
                 SizedBox(width: 12),
                 Text(
-                  '       Login with Google',
+                  '         Login with Google',
                   style: TextStyle(
                     color: Colors.black87,
                     fontSize: 16,
