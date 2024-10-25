@@ -347,7 +347,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 25),
                       // Add your Google login button if needed
 
-                      GestureDetectorgi(
+                      GestureDetector(
                         child: GoogleLoginButton(
                             onPressed: () async {
                               try {
